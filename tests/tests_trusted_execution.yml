@@ -1,0 +1,129 @@
+---
+- name: Basic test for fapolicyd
+  hosts: all
+  vars:
+    __directories:
+      - path: /var/tmp/executable_binaries
+        mode: '0755'
+      - path: "{{ __bootloader_binaries_dir }}/source"
+        mode: '0755'
+    __bootloader_binaries_dir: /var/tmp/executable_binaries
+    __bootloader_source_dir: "{{ __bootloader_binaries_dir }}/source"
+    __bootloader_source_file: "{{ __bootloader_source_dir }}/main.c"
+    __bootloader_exe1: "{{ __bootloader_binaries_dir }}/exe1"
+    __bootloader_exe2: "{{ __bootloader_binaries_dir }}/exe2"
+    __bootloader_user: testuser
+
+  tasks:
+    - name: Create directories for executable binaries and source files
+      file:
+        path: "{{ item.path }}"
+        state: directory
+        mode: "{{ item.mode }}"
+      loop: "{{ __directories }}"
+
+    - name: Create C source code (binary1)
+      copy:
+        content: |
+          int main(void) {
+              return 0;
+          }
+        dest: "{{ __bootloader_source_file }}"
+        mode: '0755'
+
+    - name: Install GCC and glibc-devel
+      package:
+        name:
+          - gcc
+          - glibc-devel
+        state: present
+
+    - name: Compile C programs (exe1)
+      command: gcc -o {{ __bootloader_exe1 }} {{ __bootloader_source_file }}
+      register: compile_result
+      changed_when: "compile_result.rc != 0"
+
+    - name: Compile C programs (exe2)
+      command: gcc -g -o {{ __bootloader_exe2 }} {{ __bootloader_source_file }}
+      register: compile_result
+      changed_when: "compile_result.rc != 0"
+
+    - name: Create a new user
+      user:
+        name: "{{ __bootloader_user }}"
+        state: present
+        shell: /bin/bash
+
+    - name: Run the role
+      include_role:
+        name: linux-system-roles.fapolicyd
+      vars:
+        fapolicyd_setup_enable_service: true
+        fapolicyd_setup_integrity: sha256
+        fapolicyd_setup_trust: rpmdb,file
+        fapolicyd_add_trusted_file:
+          - /etc/passwd
+          - /etc/fapolicyd/fapolicyd.conf
+          - /etc/krb5.conf
+          - "{{ __bootloader_exe1 }}"
+
+    - name: Run trusted binary exe1
+      command: su - {{ __bootloader_user }} -c {{ __bootloader_exe1 }}
+      register: run_exe
+      changed_when: "run_exe.rc != 0"
+
+    - name: Replace binary exe1 with exe2
+      shell: cat {{ __bootloader_exe2 }} > {{ __bootloader_exe1 }}
+      register: cat_exe
+      changed_when: "cat_exe.rc != 0"
+
+    - name: Run untrusted binary exe2
+      command: su - {{ __bootloader_user }} -c {{ __bootloader_exe2 }}
+      register: run_exe
+      changed_when: false
+      failed_when: "run_exe.rc != 126"
+
+    - name: Check now untrusted exe1 after replacement
+      command: su - {{ __bootloader_user }} -c {{  __bootloader_exe1 }}
+      register: run_exe
+      changed_when: false
+      failed_when: "run_exe.rc != 126"
+
+    - name: Delete binary exe1 from trustdb
+      command: fapolicyd-cli -f delete {{ __bootloader_exe1 }}
+      register: delete_from_db
+      changed_when: "delete_from_db.rc != 0"
+
+    - name: Update trustdb
+      command: fapolicyd-cli --update
+      register: update_db
+      changed_when: "update_db.rc != 0"
+
+    - name: Run untrusted exe1 after removing from trustdb
+      command: su - {{ __bootloader_user }} -c {{ __bootloader_exe1 }}
+      register: run_exe
+      changed_when: false
+      failed_when: "run_exe.rc != 126"
+
+    - name: Add binary exe1 to trustdb
+      command: fapolicyd-cli -f add {{ __bootloader_exe1 }}
+      register: add_to_db
+      changed_when: "add_to_db.rc != 0"
+
+    - name: Update trustdb
+      command: fapolicyd-cli --update
+      register: update_db
+      changed_when: "update_db.rc != 0"
+
+    - name: Run trusted exe1
+      command: su - {{ __bootloader_user }} -c {{ __bootloader_exe1 }}
+      register: run_exe
+      changed_when: "run_exe.rc != 0"
+
+    - name: Clean up binaries
+      file:
+        path: "{{ item }}"
+        state: absent
+      with_items:
+        - "{{ __bootloader_exe1 }}"
+        - "{{ __bootloader_exe2 }}"
