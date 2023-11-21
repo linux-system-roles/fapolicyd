@@ -10,4 +10,4 @@
       include_tasks: tasks/check_header.yml
       vars:
         __file: "{{ __fapolicyd_dir }}/{{ __fapolicyd_conf }}"
-        __fingerprint: system_role:template
+        __fingerprint: "system_role:fapolicyd"
