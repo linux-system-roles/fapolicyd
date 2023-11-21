@@ -1,18 +1,13 @@
 ---
-- name: Gather needed facts
-  setup:
-    gather_subset:
-      - '!all'
-      - '!min'
-      - distribution_major_version
-  when: ansible_facts.distribution_major_version is not defined
+- name: Set platform/version specific variables
+  include_tasks: set_vars.yml
 
 - name: System check
   fail:
     msg:
-      - Only Red Hat Enterprise Linux >= 8.1 and Fedora is supported
-      - System: "{{ ansible_facts.os_family }}"
-      - Version: "{{ ansible_facts.distribution_version }}"
+      - Only Enterprise Linux >= 8.1 and Fedora are supported
+      - System - {{ ansible_facts.os_family }}
+      - Version - {{ ansible_facts.distribution_version }}
   when: (ansible_facts.os_family != "RedHat") or
     (ansible_facts.distribution_version is version("8.1", "<"))
 
@@ -52,20 +47,22 @@
 - name: Check failed conditions
   fail:
     msg: Multiple failed conditions
-  when: __failed_check_trust is failed or __failed_check_integrity is failed  or
+  when: __failed_check_trust is failed or __failed_check_integrity is failed or
     __failed_check_trusted_file is failed
 
 - name: Install fapolicyd packages
   package:
-    name:
-      - "{{ __fapolicyd_packages }}"
+    name: "{{ __fapolicyd_packages }}"
     state: present
+    use: "{{ (__fapolicyd_is_ostree | d(false)) |
+             ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
 
 - name: Install fapolicyd-selinux packages
   package:
-    name:
-      - "{{ __fapolicyd_selinux_packages }}"
+    name: "{{ __fapolicyd_selinux_packages }}"
     state: present
+    use: "{{ (__fapolicyd_is_ostree | d(false)) |
+             ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
   when: ansible_facts.distribution_version is version("8.3", ">=")
 
 - name: Copy fapolicyd configuration file
@@ -74,13 +71,16 @@
     dest: "{{ __fapolicyd_dir }}/{{ __fapolicyd_conf }}"
     owner: root
     group: fapolicyd
-    mode: '0644'
+    mode: "0644"
+  register: __fapolicy_conf
 
 - name: Run fapolicyd configuration check
   command: fapolicyd-cli --check-config
   check_mode: false
   changed_when: false
-  when: ansible_facts.distribution_version is version("8.6", ">=")
+  when:
+    - ansible_facts.distribution_version is version("8.6", ">=")
+    - __fapolicy_conf is changed
 
 - name: Trustdb cleanup
   command: fapolicyd-cli --file delete /
@@ -102,14 +102,16 @@
     name: "{{ __fapolicyd_services }}"
     state: restarted
     enabled: true
+  when: fapolicyd_setup_enable_service | bool
   ignore_errors: true
   register: __fapolicyd_restart
 
 - name: Check fapolicyd logs
-  command: journalctl -n5 -u "{{ __fapolicyd_services }}"
+  command: journalctl -n5 -u {{ __fapolicyd_services | quote }}
   register: __fapolicyd_results
   changed_when: false
   when: __fapolicyd_restart is failed
+  failed_when: __fapolicyd_restart is failed
 
 - name: Making sure fapolicyd does not run if it was set so
   service:
@@ -117,11 +119,3 @@
     state: stopped
     enabled: false
   when: not fapolicyd_setup_enable_service
-
-- name: Print fapolicyd logs
-  debug:
-    msg: "{{ __fapolicyd_results.stdout_lines }}"
-  failed_when: true
-  when:
-    - __fapolicyd_restart is failed
-    - __fapolicyd_results.stdout_lines is defined

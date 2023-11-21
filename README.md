@@ -1,6 +1,6 @@
 # Fapolicyd
 
-Fapolicyd System Role 
+Fapolicyd System Role
 
 ## Requirements
 
@@ -8,7 +8,13 @@ This role is only supported on RHEL8.1+/CentOS8.1+ and Fedora distributions. Con
 
 ### Collection requirements
 
-None.
+If you want to manage `rpm-ostree` systems with this role, you will need to
+install additional collections.  Please run the following command line to
+install the collection.
+
+```bash
+ansible-galaxy collection install -vv -r meta/collection-requirements.yml
+```
 
 ## Role Variables
 
@@ -53,7 +59,9 @@ Default `[]` - it can take list of files that will be marked as trusted.
     - fapolicyd
 ```
 
+## rpm-ostree
 
+See README-ostree.md
 
 ## License
 

@@ -16,7 +16,7 @@ fapolicyd_setup_trust: "{{ '' if ansible_facts.distribution_version is
 # can be "none", "size", "sha256", "ima"
 # in case of ima, kernel's IMA has to be setup correctly
 fapolicyd_setup_integrity: "{{ '' if ansible_facts.distribution_version is
-                          version('8.3', '<=') else 'none' }}"
+                               version('8.3', '<=') else 'none' }}"
 
 # set permissive mode
 fapolicyd_setup_permissive: false
@@ -25,4 +25,4 @@ fapolicyd_setup_permissive: false
 # list of trusted files
 
 fapolicyd_add_trusted_file: "{{ '' if ansible_facts.distribution_version is
-                            version('8.2', '<=') else [] }}"
+                                version('8.2', '<=') else [] }}"
