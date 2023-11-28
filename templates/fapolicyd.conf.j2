@@ -15,7 +15,7 @@ detailed_report = 1
 db_max_size = 50
 subj_cache_size = 1549
 obj_cache_size = 8191
-{% if ansible_facts.distribution_version is version("8.2", ">=") %}
+{% if __fapolicyd_watch_fs_supported %}
 watch_fs = ext2,ext3,ext4,tmpfs,xfs,vfat,iso9660,btrfs
 {% endif %}
 
@@ -23,7 +23,7 @@ watch_fs = ext2,ext3,ext4,tmpfs,xfs,vfat,iso9660,btrfs
 trust = {{ fapolicyd_setup_trust }}
 {% endif %}
 
-{% if ansible_facts.distribution_version is version("8.3", ">=") %}
+{% if __fapolicyd_syslog_format_supported %}
 syslog_format = rule,dec,perm,auid,pid,exe,:,path,ftype,trust
 {% endif %}
 
