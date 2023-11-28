@@ -20,8 +20,8 @@ ansible-galaxy collection install -vv -r meta/collection-requirements.yml
 
 ### fapolicyd_setup_enable_service
 
-Default `false` - if set to `true` the variable makes the service started 
-and enabled fapolicyd service after successful deployment.
+Default `true` - if set to `false` the variable makes the service stopped
+and disabled.
 
 ### fapolicyd_setup_trust
 

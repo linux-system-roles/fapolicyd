@@ -8,8 +8,7 @@
       - Only Enterprise Linux >= 8.1 and Fedora are supported
       - System - {{ ansible_facts.os_family }}
       - Version - {{ ansible_facts.distribution_version }}
-  when: (ansible_facts.os_family != "RedHat") or
-    (ansible_facts.distribution_version is version("8.1", "<"))
+  when: not __fapolicyd_supported
 
 - name: Check trust compatibility
   fail:
@@ -19,7 +18,7 @@
   ignore_errors: true
   when:
     - fapolicyd_setup_trust | length > 0
-    - ansible_facts.distribution_version is version("8.2", "<=")
+    - not __fapolicyd_trust_supported
   register: __failed_check_trust
 
 - name: Check integrity compatibility
@@ -30,7 +29,7 @@
   ignore_errors: true
   when:
     - fapolicyd_setup_integrity | length > 0
-    - ansible_facts.distribution_version is version("8.3", "<=")
+    - not __fapolicyd_integrity_supported
   register: __failed_check_integrity
 
 - name: Check trust files compatibility
@@ -41,7 +40,7 @@
   ignore_errors: true
   when:
     - fapolicyd_add_trusted_file | length > 0
-    - ansible_facts.distribution_version is version("8.3", "<=")
+    - not __fapolicyd_trustfiles_supported
   register: __failed_check_trusted_file
 
 - name: Check failed conditions
@@ -52,18 +51,13 @@
 
 - name: Install fapolicyd packages
   package:
-    name: "{{ __fapolicyd_packages }}"
+    name: "{{ __pkgs }}"
     state: present
     use: "{{ (__fapolicyd_is_ostree | d(false)) |
              ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
-
-- name: Install fapolicyd-selinux packages
-  package:
-    name: "{{ __fapolicyd_selinux_packages }}"
-    state: present
-    use: "{{ (__fapolicyd_is_ostree | d(false)) |
-             ternary('ansible.posix.rhel_rpm_ostree', omit) }}"
-  when: ansible_facts.distribution_version is version("8.3", ">=")
+  vars:
+    __pkgs: "{{ __fapolicyd_packages + (__fapolicyd_selinux_packages
+      if __fapolicyd_selinux_supported else []) }}"
 
 - name: Copy fapolicyd configuration file
   template:
@@ -79,30 +73,26 @@
   check_mode: false
   changed_when: false
   when:
-    - ansible_facts.distribution_version is version("8.6", ">=")
+    - __fapolicyd_configcheck_supported | bool
     - __fapolicy_conf is changed
-
-- name: Trustdb cleanup
-  command: fapolicyd-cli --file delete /
-  when: ansible_facts.distribution_version is version("8.3", ">=")
-  changed_when: true
-  failed_when: false
-
-- name: Add file to trustdb
-  command: fapolicyd-cli --file add {{ item | quote }}
-  loop: "{{ (fapolicyd_add_trusted_file is string) |
-    ternary([fapolicyd_add_trusted_file], fapolicyd_add_trusted_file) }}"
-  when:
-    - fapolicyd_add_trusted_file | length > 0
-    - ansible_facts.distribution_version is version("8.3", ">=")
-  changed_when: true
 
 - name: Start fapolicyd service
   service:
     name: "{{ __fapolicyd_services }}"
-    state: restarted
+    state: started
     enabled: true
   when: fapolicyd_setup_enable_service | bool
+  ignore_errors: true
+  register: __fapolicyd_start
+
+- name: Restart fapolicyd service
+  service:
+    name: "{{ __fapolicyd_services }}"
+    state: restarted
+    enabled: true
+  when:
+    - fapolicyd_setup_enable_service | bool
+    - __fapolicy_conf is changed
   ignore_errors: true
   register: __fapolicyd_restart
 
@@ -110,8 +100,58 @@
   command: journalctl -n5 -u {{ __fapolicyd_services | quote }}
   register: __fapolicyd_results
   changed_when: false
-  when: __fapolicyd_restart is failed
-  failed_when: __fapolicyd_restart is failed
+  when: __fapolicyd_start is failed or __fapolicyd_restart is failed
+  failed_when: __fapolicyd_start is failed or __fapolicyd_restart is failed
+
+- name: Trustdb cleanup
+  command: fapolicyd-cli --file delete /
+  changed_when: true
+  failed_when: false
+
+- name: Add file to trustdb
+  command: fapolicyd-cli --file add {{ item | quote }}
+  loop: "{{ (fapolicyd_add_trusted_file is string) |
+    ternary([fapolicyd_add_trusted_file], fapolicyd_add_trusted_file) }}"
+  when: item | length > 0
+  changed_when: true
+
+# The problem is that there is a race condition between calling
+# fapolicyd-cli --update and when fapolicyd will actually enforce
+# the policyd - so we have to look for the 'Updated' message in
+# the fapolicyd logs.  Also - I don't think we can move this into
+# a script, because that script might be excluded by policy!
+- name: Update fapolicyd db
+  when: fapolicyd_setup_enable_service | bool
+  shell:
+    cmd: |
+      set -euo pipefail
+      # get current journal cursor
+      cursor=""
+      while [ -z "$cursor" ]; do
+        sleep 1
+        cursor="$(journalctl -u fapolicyd -n 0 --show-cursor |
+          awk '/^-- cursor:/ {print $3}')" || :
+      done
+      # update trustdb
+      fapolicyd-cli --update
+      # wait until we see the message 'Updated' - wait up to 30 seconds
+      starttime="$(date +%s)"
+      waittime=30  # seconds
+      endtime="$(expr "$starttime" + "$waittime")"
+      set +o pipefail  # the read will always return a failure code at EOF
+      journalctl -u fapolicyd --no-tail -f --after-cursor "$cursor" | \
+      while read -r line; do
+        if [[ "$line" =~ fapolicyd[^:\ ]*:\ Updated$ ]]; then
+          echo SUCCESS: trustdb is updated
+          exit 0
+        fi
+        curtime="$(date +%s)"
+        if [ "$curtime" -gt "$endtime" ]; then
+          echo ERROR: trustdb not updated after "$waittime" seconds - exiting
+          exit 1
+        fi
+      done
+  changed_when: true
 
 - name: Making sure fapolicyd does not run if it was set so
   service:
