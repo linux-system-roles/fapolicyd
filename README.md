@@ -34,7 +34,7 @@ Default `none` - there are four supported types of integrity. No integrity `none
 
 ### fapolicyd_setup_permissive
 
-Default `false` - if set to `true` deploys the daemon in permissive mode. 
+Default `false` - if set to `true` deploys the daemon in permissive mode.
 
 ### fapolicyd_add_trusted_file
 
@@ -42,8 +42,7 @@ Default `[]` - it can take list of files that will be marked as trusted.
 
 ## Example Playbook
 
-
-```
+```yaml
 ---
 - name: Example fapolicyd role invocation
   hosts: all
@@ -73,3 +72,4 @@ Radovan Sroka @rsroka
 
 Marko Myllynen @myllynen
 
+[![ansible-lint.yml](https://github.com/linux-system-roles/fapolicyd/actions/workflows/ansible-lint.yml/badge.svg)](https://github.com/linux-system-roles/fapolicyd/actions/workflows/ansible-lint.yml) [![ansible-test.yml](https://github.com/linux-system-roles/fapolicyd/actions/workflows/ansible-test.yml/badge.svg)](https://github.com/linux-system-roles/fapolicyd/actions/workflows/ansible-test.yml) [![markdownlint.yml](https://github.com/linux-system-roles/fapolicyd/actions/workflows/markdownlint.yml/badge.svg)](https://github.com/linux-system-roles/fapolicyd/actions/workflows/markdownlint.yml) [![shellcheck.yml](https://github.com/linux-system-roles/fapolicyd/actions/workflows/shellcheck.yml/badge.svg)](https://github.com/linux-system-roles/fapolicyd/actions/workflows/shellcheck.yml) [![woke.yml](https://github.com/linux-system-roles/fapolicyd/actions/workflows/woke.yml/badge.svg)](https://github.com/linux-system-roles/fapolicyd/actions/workflows/woke.yml)
