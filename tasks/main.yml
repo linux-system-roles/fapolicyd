@@ -140,8 +140,8 @@
       systemctl restart fapolicyd
       search_str='fapolicyd[^:\ ]*:\ Starting to listen for events$'
       # wait until we see the search_str - wait up to 30 seconds
-      waittime=30  # seconds
-      endtime="$(expr "$(date +%s)" + "$waittime")"
+      timeout=60  # seconds
+      endtime="$(expr "$(date +%s)" + "$timeout")"
       set +o pipefail  # the read will always return a failure code at EOF
       journalctl -u fapolicyd --no-tail -f --after-cursor "$cursor" | \
       while read -r line; do
