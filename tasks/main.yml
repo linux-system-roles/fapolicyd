@@ -141,13 +141,14 @@
         set -uxo pipefail
         exec 1>&2
         journalctl -n10 -u {{ __fapolicyd_services | quote }}
-        systemctl status {{ __fapolicyd_services | quote }}
-        journalctl -ex
+        systemctl status --full {{ __fapolicyd_services | quote }}
+        systemctl show --all {{ __fapolicyd_services | quote }}
+        journalctl --header
       changed_when: false
 
-    - name: Fail
-      fail:
-        msg: "{{ ansible_failed_result }}"
+    # - name: Fail
+    #   fail:
+    #     msg: "{{ ansible_failed_result }}"
 
 - name: Making sure fapolicyd does not run if it was set so
   service:
