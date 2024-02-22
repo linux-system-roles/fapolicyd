@@ -87,49 +87,67 @@
     ternary([fapolicyd_add_trusted_file], fapolicyd_add_trusted_file) }}"
   when: item | length > 0
   changed_when: true
-  register: __fapolicy_files
 
-- name: Remove state file
-  file:
-    path: "{{ __fapolicyd_state_file }}"
-    state: absent
-
-- name: Start fapolicyd service
-  service:
-    name: "{{ __fapolicyd_services }}"
-    state: started
-    enabled: true
+# The problem is that there is a race condition between calling
+# `systemctl restart fapolicyd` and when fapolicyd will actually
+# enforce the policy - so we have to look for the right string in the fapolicyd
+# logs.  Also - I don't think we can move this into a script, because that
+# script might be excluded by policy!
+# NOTE: I tried using `fapolicyd-cli --update` as recommended by the
+# documentation but it does not seem to work in all cases e.g. on RHEL 8.8 if
+# you are deleting entries but not adding entries, it seems to do nothing - the
+# only reliable way to update the trustdb is to restart the daemon and check for
+# "fapolicyd[...]: Starting to listen for events" in the journald output
+- name: Update fapolicyd db, restart, check for errors
   when: fapolicyd_setup_enable_service | bool
-  ignore_errors: true  # errors handled below
-  register: __fapolicyd_start
-
-- name: Restart and verify fapolicyd service
-  when:
-    - fapolicyd_setup_enable_service | bool
-    - __fapolicy_conf is changed or __fapolicy_files is changed
   block:
-    - name: Restart fapolicyd service
-      service:
-        name: "{{ __fapolicyd_services }}"
-        state: restarted
-        enabled: true
-      ignore_errors: true  # errors handled below
-      register: __fapolicyd_restart
+    - name: Update fapolicyd db, restart fapolicyd, wait for readiness
+      shell:
+        cmd: |
+          set -euxo pipefail
+          # get current journal cursor, if any
+          cursor="$(journalctl -u fapolicyd -n 0 --show-cursor |
+            awk '/^-- cursor:/ {print $3}')" || :
+          systemctl restart fapolicyd
+          search_str='fapolicyd[^:\ ]*:\ Starting to listen for events$'
+          # wait until we see the search_str
+          waittime=60  # seconds
+          endtime="$(expr "$(date +%s)" + "$waittime")"
+          set +o pipefail  # the read will always return a failure code at EOF
+          journalctl_cmd=(journalctl -u fapolicyd -f --no-tail)
+          if [ -n "$cursor" ]; then
+            journalctl_cmd+=(--after-cursor "$cursor")
+          fi
+          "${journalctl_cmd[@]}" | while read -r line; do
+            if [[ "$line" =~ $search_str ]]; then
+              echo INFO: trustdb is updated
+              exit 0
+            fi
+          done & pid=$!
+          while ps -p "$pid" > /dev/null 2>&1; do
+            if [ "$(date +%s)" -gt "$endtime" ]; then
+              echo ERROR: failed to update the trustdb
+              exit 1
+            fi
+            sleep 1
+          done
+          echo INFO: trustdb is updated, server is ready
+          exit 0  # success
+      changed_when: true
 
-    - name: Check if server is started and listening
-      command:
-        cmd: fapolicyd-cli --check-status
-        creates: "{{ __fapolicyd_state_file }}"
+  rescue:
+    - name: Check system status
+      shell: |
+        set -uxo pipefail
+        exec 1>&2
+        journalctl -n10 -u {{ __fapolicyd_services | quote }}
+        systemctl status {{ __fapolicyd_services | quote }}
+        journalctl -ex
       changed_when: false
-      register: __fapolicyd_check_stats
-      until: __fapolicyd_check_stats is success
 
-- name: Check fapolicyd logs
-  command: journalctl -n5 -u {{ __fapolicyd_services | quote }}
-  register: __fapolicyd_results
-  changed_when: false
-  when: __fapolicyd_start is failed or __fapolicyd_restart is failed
-  failed_when: __fapolicyd_start is failed or __fapolicyd_restart is failed
+    - name: Fail
+      fail:
+        msg: "{{ ansible_failed_result }}"
 
 - name: Making sure fapolicyd does not run if it was set so
   service:
