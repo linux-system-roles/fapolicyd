@@ -39,9 +39,10 @@
         - name: Create shell executables
           copy:
             content: |
-              #/bin/bash
+              #!/usr/bin/python
               # this is item {{ item }}
-              exit 0
+              import sys
+              sys.exit(0)
             dest: "{{ item }}"
             mode: "0755"
           loop:
