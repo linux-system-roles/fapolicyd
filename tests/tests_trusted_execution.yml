@@ -39,7 +39,7 @@
         - name: Create shell executables
           copy:
             content: |
-              #!/usr/bin/python
+              #!{{ __python }}
               # this is item {{ item }}
               import sys
               sys.exit(0)
@@ -48,6 +48,10 @@
           loop:
             - "{{ __test_fpd_exe1 }}"
             - "{{ __test_fpd_exe2 }}"
+          vars:
+            __python: "{{ '/usr/libexec/platform-python'
+              if ansible_facts['distribution_major_version'] == '8'
+              else '/usr/bin/python' }}"
 
         - name: Create a new user
           user:
