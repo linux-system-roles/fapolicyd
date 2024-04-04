@@ -1,6 +1,16 @@
 Changelog
 =========
 
+[1.1.2] - 2024-04-04
+--------------------
+
+### Other Changes
+
+- ci: fix python unit test - copy pytest config to tests/unit (#15)
+- ci: Bump ansible/ansible-lint from 6 to 24 (#18)
+- test: Fix trusted test - use python script (#19)
+- ci: Bump mathieudutour/github-tag-action from 6.1 to 6.2 (#20)
+
 [1.1.1] - 2024-01-16
 --------------------
 
