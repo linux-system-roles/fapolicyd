@@ -51,7 +51,7 @@
           vars:
             __python: "{{ '/usr/libexec/platform-python'
               if (ansible_facts['distribution_major_version'] == '8' and
-                  ansible_facts['os_family'] == 'RedHat') 
+                  ansible_facts['os_family'] == 'RedHat')
               else '/usr/bin/python' }}"
 
         - name: Create a new user
