@@ -1,6 +1,17 @@
 Changelog
 =========
 
+[1.1.4] - 2024-07-02
+--------------------
+
+### Bug Fixes
+
+- fix: add support for EL10 (#28)
+
+### Other Changes
+
+- ci: ansible-lint action now requires absolute directory (#27)
+
 [1.1.3] - 2024-06-11
 --------------------
 
