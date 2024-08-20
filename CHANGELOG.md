@@ -1,6 +1,18 @@
 Changelog
 =========
 
+[1.1.5] - 2024-08-20
+--------------------
+
+### Other Changes
+
+- ci: Add tft plan and workflow (#30)
+- ci: Update fmf plan to add a separate job to prepare managed nodes (#32)
+- ci: Bump sclorg/testing-farm-as-github-action from 2 to 3 (#33)
+- ci: Add workflow for ci_test bad, use remote fmf plan (#34)
+- ci: Fix missing slash in ARTIFACTS_URL (#35)
+- test: make test_trusted_execution gather facts (#36)
+
 [1.1.4] - 2024-07-02
 --------------------
 
