@@ -1,6 +1,7 @@
 ---
 - name: Basic test for fapolicyd
   hosts: all
+  gather_facts: true  # needed for python executable discovery
   tasks:
     - name: Run tests
       vars:
