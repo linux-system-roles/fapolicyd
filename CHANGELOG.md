@@ -1,6 +1,13 @@
 Changelog
 =========
 
+[1.1.6] - 2024-08-21
+--------------------
+
+### Other Changes
+
+- test: use ansible_python_interpreter (#38)
+
 [1.1.5] - 2024-08-20
 --------------------
 
