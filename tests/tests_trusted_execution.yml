@@ -50,10 +50,8 @@
             - "{{ __test_fpd_exe1 }}"
             - "{{ __test_fpd_exe2 }}"
           vars:
-            __python: "{{ '/usr/libexec/platform-python'
-              if (ansible_facts['distribution_major_version'] == '8' and
-                  ansible_facts['os_family'] == 'RedHat')
-              else '/usr/bin/python' }}"
+            __python: "{{ ansible_python_interpreter |
+              d(discovered_interpreter_python) }}"
 
         - name: Create a new user
           user:
