@@ -1,6 +1,17 @@
 Changelog
 =========
 
+[1.1.7] - 2024-08-29
+--------------------
+
+### Bug Fixes
+
+- fix: use journalctl -t fapolicyd to get fapolicyd log messages (#41)
+
+### Other Changes
+
+- ci: Add tags to TF workflow, allow more [citest bad] formats (#40)
+
 [1.1.6] - 2024-08-21
 --------------------
 
