@@ -51,7 +51,7 @@
             - "{{ __test_fpd_exe2 }}"
           vars:
             __python: "{{ ansible_python_interpreter |
-              d(discovered_interpreter_python) }}"
+              d(ansible_facts['discovered_interpreter_python']) }}"
 
         - name: Create a new user
           user:
