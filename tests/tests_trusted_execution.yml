@@ -1,7 +1,6 @@
 ---
 - name: Basic test for fapolicyd
   hosts: all
-  gather_facts: true  # needed for python executable discovery
   tasks:
     - name: Run tests
       vars:
@@ -60,8 +59,7 @@
             shell: /bin/bash
 
         - name: Run the role
-          include_role:
-            name: linux-system-roles.fapolicyd
+          include_tasks: tasks/run_role_with_clear_facts.yml
           vars:
             fapolicyd_setup_integrity: sha256
             fapolicyd_setup_trust: rpmdb,file
@@ -101,8 +99,7 @@
           failed_when: run_exe.rc != 126
 
         - name: Run the role again without test file
-          include_role:
-            name: linux-system-roles.fapolicyd
+          include_tasks: tasks/run_role_with_clear_facts.yml
           vars:
             fapolicyd_setup_integrity: sha256
             fapolicyd_setup_trust: rpmdb,file
