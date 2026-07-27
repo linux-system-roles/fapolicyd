@@ -8,6 +8,9 @@
           {{ __fapolicyd_tmpdir.path }}/executables
         __test_fpd_exe1: "{{ __test_fpd_exec_dir }}/exe1"
         __test_fpd_exe2: "{{ __test_fpd_exec_dir }}/exe2"
+        __test_fpd_dir_exec_dir: >-
+          {{ __fapolicyd_tmpdir.path }}/dir_executables
+        __test_fpd_dir_exe: "{{ __test_fpd_dir_exec_dir }}/dir_exe"
         __test_fpd_user: fapolicyd_test1_user
       block:
         # NOTE - to debug a failing execution:
@@ -35,6 +38,7 @@
           loop:
             - "{{ __fapolicyd_tmpdir.path }}"
             - "{{ __test_fpd_exec_dir }}"
+            - "{{ __test_fpd_dir_exec_dir }}"
 
         - name: Create shell executables
           copy:
@@ -48,6 +52,7 @@
           loop:
             - "{{ __test_fpd_exe1 }}"
             - "{{ __test_fpd_exe2 }}"
+            - "{{ __test_fpd_dir_exe }}"
           vars:
             __python: "{{ ansible_python_interpreter |
               d(ansible_facts['discovered_interpreter_python']) }}"
@@ -63,7 +68,7 @@
           vars:
             fapolicyd_setup_integrity: sha256
             fapolicyd_setup_trust: rpmdb,file
-            fapolicyd_add_trusted_file:
+            fapolicyd_add_trusted_paths:
               - /etc/passwd
               - /etc/fapolicyd/fapolicyd.conf
               - /etc/krb5.conf
@@ -103,7 +108,7 @@
           vars:
             fapolicyd_setup_integrity: sha256
             fapolicyd_setup_trust: rpmdb,file
-            fapolicyd_add_trusted_file: []
+            fapolicyd_add_trusted_paths: []
 
         - name: Run untrusted exe1 after removing from trustdb
           command: >-
@@ -112,6 +117,51 @@
           register: run_exe
           changed_when: false
           failed_when: run_exe.rc != 126
+
+        - name: Run the role with trusted directory
+          include_tasks: tasks/run_role_with_clear_facts.yml
+          vars:
+            fapolicyd_setup_integrity: sha256
+            fapolicyd_setup_trust: rpmdb,file
+            fapolicyd_add_trusted_paths:
+              - "{{ __test_fpd_dir_exec_dir }}"
+
+        - name: Run trusted binary from trusted directory
+          command: >-
+            su - {{ __test_fpd_user | quote }} -c
+            {{ __test_fpd_dir_exe | quote }}
+          changed_when: false
+
+        - name: Run the role again without trusted directory
+          include_tasks: tasks/run_role_with_clear_facts.yml
+          vars:
+            fapolicyd_setup_integrity: sha256
+            fapolicyd_setup_trust: rpmdb,file
+            fapolicyd_add_trusted_paths: []
+
+        - name: Run untrusted dir_exe after removing directory from trustdb
+          command: >-
+            su - {{ __test_fpd_user | quote }} -c
+            {{ __test_fpd_dir_exe | quote }}
+          register: run_exe
+          changed_when: false
+          failed_when: run_exe.rc != 126
+
+        # fapolicyd_add_trusted_file is deprecated but must still work
+        - name: Run the role with deprecated fapolicyd_add_trusted_file
+          include_tasks: tasks/run_role_with_clear_facts.yml
+          vars:
+            fapolicyd_setup_integrity: sha256
+            fapolicyd_setup_trust: rpmdb,file
+            fapolicyd_add_trusted_file:
+              - "{{ __test_fpd_dir_exe }}"
+
+        - name: Run trusted binary using deprecated fapolicyd_add_trusted_file
+          command: >-
+            su - {{ __test_fpd_user | quote }} -c
+            {{ __test_fpd_dir_exe | quote }}
+          changed_when: false
+
       always:
         - name: Shutdown fapolicyd
           service:
