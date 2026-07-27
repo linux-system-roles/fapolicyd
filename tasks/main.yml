@@ -32,14 +32,14 @@
     - not __fapolicyd_integrity_supported
   register: __failed_check_integrity
 
-- name: Check trust files compatibility
+- name: Check trust paths compatibility
   fail:
     msg: >-
-      Fapolicyd does not support trust files setting fapolicyd_add_trusted_file
-      on EL version < 8.4
+      Fapolicyd does not support trust paths setting fapolicyd_add_trusted_paths
+      (or fapolicyd_add_trusted_file) on EL version < 8.4
   ignore_errors: true
   when:
-    - fapolicyd_add_trusted_file | length > 0
+    - fapolicyd_add_trusted_paths | length > 0
     - not __fapolicyd_trustfiles_supported
   register: __failed_check_trusted_file
 
@@ -108,10 +108,10 @@
   changed_when: true
   failed_when: false
 
-- name: Add file to trustdb
+- name: Add path to trustdb
   command: fapolicyd-cli --file add {{ item | quote }}
-  loop: "{{ (fapolicyd_add_trusted_file is string) |
-    ternary([fapolicyd_add_trusted_file], fapolicyd_add_trusted_file) }}"
+  loop: "{{ (fapolicyd_add_trusted_paths is string) |
+    ternary([fapolicyd_add_trusted_paths], fapolicyd_add_trusted_paths) }}"
   when: item | length > 0
   changed_when: true
 

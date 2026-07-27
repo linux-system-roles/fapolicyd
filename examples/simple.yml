@@ -5,7 +5,7 @@
   vars:
     fapolicyd_setup_integrity: sha256
     fapolicyd_setup_trust: rpmdb,file
-    fapolicyd_add_trusted_file:
+    fapolicyd_add_trusted_paths:
       - /etc/passwd
       - /etc/fapolicyd/fapolicyd.conf
       - /etc/krb5.conf

@@ -36,9 +36,16 @@ Default `none` - there are four supported types of integrity. No integrity `none
 
 Default `false` - if set to `true` deploys the daemon in permissive mode.
 
+### fapolicyd_add_trusted_paths
+
+Default empty - list of files and directories that will be marked as trusted.
+Note that you cannot specify an empty directory.
+
 ### fapolicyd_add_trusted_file
 
-Default `[]` - it can take list of files that will be marked as trusted.
+Deprecated alias for `fapolicyd_add_trusted_paths`.  If `fapolicyd_add_trusted_paths`
+is not set, the role uses `fapolicyd_add_trusted_file` instead.  Prefer
+`fapolicyd_add_trusted_paths` in new playbooks.
 
 ## Example Playbook
 
@@ -50,10 +57,11 @@ Default `[]` - it can take list of files that will be marked as trusted.
     fapolicyd_setup_enable_service: true
     fapolicyd_setup_integrity: sha256
     fapolicyd_setup_trust: rpmdb,file
-    fapolicyd_add_trusted_file:
+    fapolicyd_add_trusted_paths:
       - /etc/passwd
       - /etc/fapolicyd/fapolicyd.conf
       - /etc/krb5.conf
+      - /opt/myapplication/bin  # a directory - must not be empty
   roles:
     - fapolicyd
 ```
