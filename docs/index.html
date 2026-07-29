@@ -151,6 +151,8 @@ id="toc-fapolicyd_setup_trust">fapolicyd_setup_trust</a></li>
 id="toc-fapolicyd_setup_integrity">fapolicyd_setup_integrity</a></li>
 <li><a href="#fapolicyd_setup_permissive"
 id="toc-fapolicyd_setup_permissive">fapolicyd_setup_permissive</a></li>
+<li><a href="#fapolicyd_add_trusted_paths"
+id="toc-fapolicyd_add_trusted_paths">fapolicyd_add_trusted_paths</a></li>
 <li><a href="#fapolicyd_add_trusted_file"
 id="toc-fapolicyd_add_trusted_file">fapolicyd_add_trusted_file</a></li>
 </ul></li>
@@ -194,9 +196,14 @@ not cover it.</p>
 <h2 id="fapolicyd_setup_permissive">fapolicyd_setup_permissive</h2>
 <p>Default <code>false</code> - if set to <code>true</code> deploys the
 daemon in permissive mode.</p>
+<h2 id="fapolicyd_add_trusted_paths">fapolicyd_add_trusted_paths</h2>
+<p>Default empty - list of files and directories that will be marked as
+trusted. Note that you cannot specify an empty directory.</p>
 <h2 id="fapolicyd_add_trusted_file">fapolicyd_add_trusted_file</h2>
-<p>Default <code>[]</code> - it can take list of files that will be
-marked as trusted.</p>
+<p>Deprecated alias for <code>fapolicyd_add_trusted_paths</code>. If
+<code>fapolicyd_add_trusted_paths</code> is not set, the role uses
+<code>fapolicyd_add_trusted_file</code> instead. Prefer
+<code>fapolicyd_add_trusted_paths</code> in new playbooks.</p>
 <h1 id="example-playbook">Example Playbook</h1>
 <div class="sourceCode" id="cb2"><pre
 class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="pp">---</span></span>
@@ -206,12 +213,13 @@ class="sourceCode yaml"><code class="sourceCode yaml"><span id="cb2-1"><a href="
 <span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fapolicyd_setup_enable_service</span><span class="kw">:</span><span class="at"> </span><span class="ch">true</span></span>
 <span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fapolicyd_setup_integrity</span><span class="kw">:</span><span class="at"> sha256</span></span>
 <span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fapolicyd_setup_trust</span><span class="kw">:</span><span class="at"> rpmdb,file</span></span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fapolicyd_add_trusted_file</span><span class="kw">:</span></span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="fu">fapolicyd_add_trusted_paths</span><span class="kw">:</span></span>
 <span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> /etc/passwd</span></span>
 <span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> /etc/fapolicyd/fapolicyd.conf</span></span>
 <span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> /etc/krb5.conf</span></span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">roles</span><span class="kw">:</span></span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> fapolicyd</span></span></code></pre></div>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a><span class="at">      </span><span class="kw">-</span><span class="at"> /opt/myapplication/bin</span><span class="co">  # a directory - must not be empty</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a><span class="at">  </span><span class="fu">roles</span><span class="kw">:</span></span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a><span class="at">    </span><span class="kw">-</span><span class="at"> fapolicyd</span></span></code></pre></div>
 <h1 id="rpm-ostree">rpm-ostree</h1>
 <p>See README-ostree.md</p>
 <h1 id="license">License</h1>
