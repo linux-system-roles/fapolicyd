@@ -30,6 +30,8 @@ __fapolicyd_no_subsets_facts:
 __fapolicyd_required_facts_subsets: "{{ ['!all', '!min'] +
   __fapolicyd_required_facts | difference(__fapolicyd_no_subsets_facts) }}"
 
+__fapolicyd_write_log_file: false
+
 # BEGIN - DO NOT EDIT THIS BLOCK - rh distros variables
 # Ansible distribution identifiers that the role treats like RHEL
 __fapolicyd_rh_distros:
