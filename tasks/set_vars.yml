@@ -73,3 +73,26 @@
        __distro_ver is version('8.2', '>=') }}"
     __fapolicyd_syslog_format_supported: "{{ __is_redhat and
        __distro_ver is version('8.3', '>=') }}"
+    __fapolicyd_setup_trust_default: "{{ '' if __is_redhat and
+       __distro_ver is version('8.3', '>=') else 'rpmdb,file' }}"
+    __fapolicyd_setup_integrity_default: "{{ '' if __is_redhat and
+       __distro_ver is version('8.4', '>=') else 'none' }}"
+    __fapolicyd_add_trusted_file_default: "{{ '' if __is_redhat and
+       __distro_ver is version('8.4', '>=') else [] }}"
+
+- name: Set fapolicyd configuration from user values or defaults
+  set_fact:
+    __fapolicyd_setup_trust: "{{ fapolicyd_setup_trust if fapolicyd_setup_trust is not none
+      else __fapolicyd_setup_trust_default }}"
+    __fapolicyd_setup_integrity: "{{ fapolicyd_setup_integrity
+      if fapolicyd_setup_integrity is not none
+      else __fapolicyd_setup_integrity_default }}"
+    __fapolicyd_add_trusted_file: "{{ fapolicyd_add_trusted_file
+      if fapolicyd_add_trusted_file is not none
+      else __fapolicyd_add_trusted_file_default }}"
+
+- name: Set effective trusted paths from user values or defaults
+  set_fact:
+    __fapolicyd_add_trusted_paths: "{{ fapolicyd_add_trusted_paths
+      if fapolicyd_add_trusted_paths is not none
+      else __fapolicyd_add_trusted_file }}"

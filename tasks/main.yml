@@ -20,7 +20,7 @@
       on EL version < 8.3
   ignore_errors: true
   when:
-    - fapolicyd_setup_trust | length > 0
+    - __fapolicyd_setup_trust | length > 0
     - not __fapolicyd_trust_supported
   register: __failed_check_trust
 
@@ -31,7 +31,7 @@
       on EL version < 8.4
   ignore_errors: true
   when:
-    - fapolicyd_setup_integrity | length > 0
+    - __fapolicyd_setup_integrity | length > 0
     - not __fapolicyd_integrity_supported
   register: __failed_check_integrity
 
@@ -42,7 +42,7 @@
       (or fapolicyd_add_trusted_file) on EL version < 8.4
   ignore_errors: true
   when:
-    - fapolicyd_add_trusted_paths | length > 0
+    - __fapolicyd_add_trusted_paths | length > 0
     - not __fapolicyd_trustfiles_supported
   register: __failed_check_trusted_file
 
@@ -113,8 +113,8 @@
 
 - name: Add path to trustdb
   command: fapolicyd-cli --file add {{ item | quote }}
-  loop: "{{ (fapolicyd_add_trusted_paths is string) |
-    ternary([fapolicyd_add_trusted_paths], fapolicyd_add_trusted_paths) }}"
+  loop: "{{ (__fapolicyd_add_trusted_paths is string) |
+    ternary([__fapolicyd_add_trusted_paths], __fapolicyd_add_trusted_paths) }}"
   when: item | length > 0
   changed_when: true
 
