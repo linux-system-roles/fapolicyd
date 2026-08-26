@@ -8,14 +8,14 @@ fapolicyd_setup_enable_service: true
 
 # trust list for fapolicyd configuration file
 # default "rpmdb,file"
-fapolicyd_setup_trust: "{{ '' if __fapolicyd_trust_supported
+fapolicyd_setup_trust: "{{ '' if __fapolicyd_trust_supported | default(false)
                            else 'rpmdb,file' }}"
 
 # set integrity
 # default "none"
 # can be "none", "size", "sha256", "ima"
 # in case of ima, kernel's IMA has to be setup correctly
-fapolicyd_setup_integrity: "{{ '' if __fapolicyd_integrity_supported
+fapolicyd_setup_integrity: "{{ '' if __fapolicyd_integrity_supported | default(false)
                                else 'none' }}"
 
 # set permissive mode
@@ -25,6 +25,6 @@ fapolicyd_setup_permissive: false
 # list of trusted files and directories
 # Prefer fapolicyd_add_trusted_paths; fapolicyd_add_trusted_file is kept for
 # compatibility and is used when fapolicyd_add_trusted_paths is not set
-fapolicyd_add_trusted_file: "{{ '' if __fapolicyd_trustfiles_supported
+fapolicyd_add_trusted_file: "{{ '' if __fapolicyd_trustfiles_supported | default(false)
                                 else [] }}"
 fapolicyd_add_trusted_paths: "{{ fapolicyd_add_trusted_file }}"

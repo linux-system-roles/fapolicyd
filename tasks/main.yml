@@ -10,6 +10,9 @@
       - Version - {{ ansible_facts.distribution_version }}
   when: not __fapolicyd_supported
 
+- name: Validate role parameters
+  ansible.builtin.include_tasks: assert_role_vars.yml
+
 - name: Check trust compatibility
   fail:
     msg: >-
