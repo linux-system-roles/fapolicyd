@@ -18,15 +18,17 @@ argument_specs:
           disabled.
       fapolicyd_setup_trust:
         type: str
+        default: null
         description: >
-          Comma-separated list of trust sources for fapolicyd. Valid
-          sources are `rpmdb`, `file`, and `deb` (if compiled with
-          Debian support). An empty string means the trust option will
-          not be configured. When unset (`null`), defaults to
-          `rpmdb,file` on systems older than EL 8.3, and to an empty
-          string on newer systems.
+          Comma-separated list of trust sources for fapolicyd.
+          Valid sources are `rpmdb`, `file`, and `deb` (if compiled
+          with Debian support). An empty string means the trust
+          option is not configured. A `null` value selects the
+          platform-specific setting: `rpmdb,file` on EL < 8.3,
+          or an empty string on newer systems.
       fapolicyd_setup_integrity:
         type: str
+        default: null
         choices:
           - null
           - ""
@@ -35,12 +37,12 @@ argument_specs:
           - sha256
           - ima
         description: >
-          The integrity checking method for fapolicyd. Note that `ima`
-          requires the kernel IMA subsystem to be set up separately.
-          An empty string means the integrity option will not be
-          configured. When unset (`null`), defaults to `none` on
-          systems older than EL 8.4, and to an empty string on newer
-          systems.
+          The integrity checking method for fapolicyd (`none`,
+          `size`, `sha256`, or `ima`). Note that `ima` requires
+          the kernel IMA subsystem to be set up separately. An
+          empty string means the integrity option is not configured.
+          A `null` value selects the platform-specific setting:
+          `none` on EL < 8.4, or an empty string on newer systems.
       fapolicyd_setup_permissive:
         type: bool
         default: false
@@ -49,17 +51,21 @@ argument_specs:
           fapolicyd logs policy violations but does not enforce them.
       fapolicyd_add_trusted_file:
         type: raw
+        default: null
         description: >
-          Files to add to the fapolicyd trust database. Accepts a single
-          file path as a string or a list of file paths. An empty string
-          or empty list means no files will be added. When unset
-          (`null`), defaults to an empty list on systems older than
-          EL 8.4, and to an empty string on newer systems. Deprecated
-          in favor of `fapolicyd_add_trusted_paths`.
+          Files to add to the fapolicyd trust database. Accepts a
+          single file path as a string or a list of file paths. An
+          empty string or empty list means no files are added. A
+          `null` value selects the platform-specific setting: an
+          empty list on EL < 8.4, or an empty string on newer
+          systems. Deprecated in favor of
+          `fapolicyd_add_trusted_paths`.
       fapolicyd_add_trusted_paths:
         type: raw
+        default: null
         description: >
-          Files and directories to add to the fapolicyd trust database.
-          Accepts a single path as a string or a list of paths. An empty
-          string or empty list means no paths will be added. Defaults to
-          the value of `fapolicyd_add_trusted_file`.
+          Files and directories to add to the fapolicyd trust
+          database. Accepts a single path as a string or a list
+          of paths. An empty string or empty list means no paths
+          are added. A `null` value inherits the resolved value
+          of `fapolicyd_add_trusted_file`.
