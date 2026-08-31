@@ -11,10 +11,11 @@ argument_specs:
     options:
       fapolicyd_setup_enable_service:
         type: bool
+        default: true
         description: >
           Whether to start and enable the fapolicyd service after
           configuration. When `false`, the service is stopped and
-          disabled. Defaults to `true`.
+          disabled.
       fapolicyd_setup_trust:
         type: str
         description: >
@@ -39,10 +40,10 @@ argument_specs:
           and to an empty string on newer systems.
       fapolicyd_setup_permissive:
         type: bool
+        default: false
         description: >
           Whether to deploy fapolicyd in permissive mode. When `true`,
           fapolicyd logs policy violations but does not enforce them.
-          Defaults to `false`.
       fapolicyd_add_trusted_file:
         type: raw
         description: >
