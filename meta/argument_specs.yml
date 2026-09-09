@@ -30,7 +30,6 @@ argument_specs:
         type: str
         default: null
         choices:
-          - null
           - ""
           - none
           - size
