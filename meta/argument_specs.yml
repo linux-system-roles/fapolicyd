@@ -31,6 +31,7 @@ argument_specs:
         default: null
         choices:
           - ""
+          - null
           - none
           - size
           - sha256
