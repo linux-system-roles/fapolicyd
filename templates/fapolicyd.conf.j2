@@ -16,7 +16,7 @@ db_max_size = 50
 subj_cache_size = 1549
 obj_cache_size = 8191
 {% if __fapolicyd_watch_fs_supported %}
-watch_fs = ext2,ext3,ext4,tmpfs,xfs,vfat,iso9660,btrfs
+watch_fs = {{ (fapolicyd_setup_watch_fs  | default(["ext2", "ext3", "ext4", "tmpfs", "xfs", "vfat", "iso9660", "btrfs"]) is string) | ternary([fapolicyd_setup_watch_fs], fapolicyd_setup_watch_fs) | join(',')}}
 {% endif %}
 
 {% if __fapolicyd_setup_trust | length > 0 %}
