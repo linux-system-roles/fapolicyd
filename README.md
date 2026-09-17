@@ -38,7 +38,7 @@ Default `false` - if set to `true` deploys the daemon in permissive mode.
 
 ### fapolicyd_setup_watch_fs
 
-Default [ext2,ext3,ext4,tmpfs,xfs,vfat,iso9660,btrfs] - list of fs types watched. Any change here becomes the entire list of items.
+Default [ext2,ext3,ext4,tmpfs,xfs,vfat,iso9660,btrfs] - list of fs types watched. Any change here becomes the entire list of items, and the data in each should match the first column of /proc/mounts.
 
 ### fapolicyd_add_trusted_paths
 
