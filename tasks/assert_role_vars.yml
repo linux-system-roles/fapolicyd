@@ -29,3 +29,17 @@
       fapolicyd_add_trusted_paths must be a string or list of strings,
       got {{ fapolicyd_add_trusted_paths | type_debug }}
   when: fapolicyd_add_trusted_paths is not none
+
+- name: Assert fapolicyd_setup_watch_fs is a list of strings
+  ansible.builtin.assert:
+    that:
+      - >-
+          fapolicyd_setup_watch_fs
+          and fapolicyd_setup_watch_fs is sequence
+          and fapolicyd_setup_watch_fs is not string
+          and fapolicyd_setup_watch_fs is not mapping
+          and fapolicyd_setup_watch_fs | reject('string') | list
+          | length == 0
+    fail_msg: >-
+      fapolicyd_setup_watch_fs must be a list of strings,
+      got {{ fapolicyd_setup_watch_fs | type_debug }}
