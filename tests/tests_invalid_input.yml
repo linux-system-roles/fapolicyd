@@ -91,6 +91,101 @@
         # Section 3: assert_role_vars validation (all versions)
         # ====================================================
 
+        # --- Test: fapolicyd_setup_watch_fs as integer ---
+        - name: Assert rejects watch_fs as integer
+          block:
+            - name: Run role with integer watch_fs
+              ansible.builtin.include_role:
+                name: linux-system-roles.fapolicyd
+              vars:
+                fapolicyd_setup_watch_fs: 123
+          rescue:
+            - name: Mark watch_fs integer rejected
+              ansible.builtin.set_fact:
+                __invalid_input_watch_fs_int_failed: true
+
+        - name: Assert watch_fs as integer was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_watch_fs_int_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject fapolicyd_setup_watch_fs
+              when given an integer value
+
+        # --- Test: fapolicyd_setup_watch_fs as list of non-strings ---
+        - name: Assert rejects watch_fs as list of non-strings
+          block:
+            - name: Run role with list of integers for watch_fs
+              ansible.builtin.include_role:
+                name: linux-system-roles.fapolicyd
+              vars:
+                fapolicyd_setup_watch_fs:
+                  - 123
+                  - 456
+          rescue:
+            - name: Mark watch_fs non-string list rejected
+              ansible.builtin.set_fact:
+                __invalid_input_watch_fs_list_failed: true
+
+        - name: Assert watch_fs as list of non-strings was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_watch_fs_list_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject fapolicyd_setup_watch_fs
+              when given a list containing non-string elements
+
+        # --- Test: fapolicyd_setup_watch_fs as dict ---
+        - name: Assert rejects watch_fs as dict
+          block:
+            - name: Run role with dict for watch_fs
+              ansible.builtin.include_role:
+                name: linux-system-roles.fapolicyd
+              vars:
+                fapolicyd_setup_watch_fs:
+                  key: val
+          rescue:
+            - name: Mark watch_fs dict rejected
+              ansible.builtin.set_fact:
+                __invalid_input_watch_fs_dict_failed: true
+
+        - name: Assert watch_fs as dict was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_watch_fs_dict_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject fapolicyd_setup_watch_fs
+              when given a dictionary value
+
+        # --- Test: fapolicyd_setup_watch_fs as boolean ---
+        - name: Assert rejects watch_fs as boolean
+          block:
+            - name: Run role with boolean for watch_fs
+              ansible.builtin.include_role:
+                name: linux-system-roles.fapolicyd
+              vars:
+                fapolicyd_setup_watch_fs: true
+          rescue:
+            - name: Mark watch_fs boolean rejected
+              ansible.builtin.set_fact:
+                __invalid_input_watch_fs_bool_failed: true
+
+        - name: Assert watch_fs as boolean was rejected
+          ansible.builtin.assert:
+            that:
+              - >-
+                __invalid_input_watch_fs_bool_failed
+                | default(false)
+            fail_msg: >-
+              assert_role_vars should reject fapolicyd_setup_watch_fs
+              when given a boolean value
+
         # --- Test: fapolicyd_add_trusted_file as integer ---
         - name: Assert rejects trusted_file as integer
           block:
@@ -220,4 +315,8 @@
             __invalid_input_trusted_file_list_failed:
             __invalid_input_trusted_file_dict_failed:
             __invalid_input_trusted_file_bool_failed:
+            __invalid_input_watch_fs_int_failed:
+            __invalid_input_watch_fs_list_failed:
+            __invalid_input_watch_fs_dict_failed:
+            __invalid_input_watch_fs_bool_failed:
           tags: tests::cleanup

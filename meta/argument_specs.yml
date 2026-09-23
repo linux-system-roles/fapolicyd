@@ -69,3 +69,12 @@ argument_specs:
           of paths. An empty string or empty list means no paths
           are added. A `null` value inherits the resolved value
           of `fapolicyd_add_trusted_file`.
+      fapolicyd_setup_watch_fs:
+        type: raw
+        default: `null`
+        description: >
+          Filesystem types for fapolicyd to monitor. A filesystem that
+          is not in this list will never be allowed to have executables
+          from it. These values should match the name presented in the first
+          column of `/proc/mounts`. A `null` value sets ext2, ext3, ext4,
+          tmpfs, xfs, vfat, iso9660, btrfs.

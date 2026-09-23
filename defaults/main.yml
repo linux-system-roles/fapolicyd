@@ -28,3 +28,8 @@ fapolicyd_setup_permissive: false
 # null means use the platform-specific default (see set_vars.yml)
 fapolicyd_add_trusted_file: null
 fapolicyd_add_trusted_paths: "{{ fapolicyd_add_trusted_file }}"
+
+# fapolicyd filesystem watch parameter
+# list of filesystems to work with fapolicyd
+# They should exactly match the name presented in the first column of /proc/mounts.
+fapolicyd_setup_watch_fs: [ext2, ext3, ext4, tmpfs, xfs, vfa", iso9660, btrfs]
