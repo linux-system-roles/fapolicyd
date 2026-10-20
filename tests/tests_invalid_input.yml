@@ -2,6 +2,13 @@
 ---
 - name: Verify invalid parameters are rejected
   hosts: all
+  vars:
+    __invalid_input_failure_messages: >-
+      {{ ([ansible_failed_result.msg | default(''),
+           ansible_failed_result.msg.msg | default('')]
+          + (ansible_failed_result.results | default([])
+             | map(attribute='msg') | map('default', '') | list))
+         | join(' ') }}
   tasks:
     - name: Run invalid input tests
       block:
@@ -30,6 +37,11 @@
                 - name: Mark invalid enable_service type rejected
                   ansible.builtin.set_fact:
                     __invalid_input_enable_service_type_failed: true
+                  when: >-
+                    "argument 'fapolicyd_setup_enable_service' is of type" in
+                    __invalid_input_failure_messages and
+                    'we were unable to convert to bool' in
+                    __invalid_input_failure_messages
 
             - name: Assert invalid enable_service type was rejected
               ansible.builtin.assert:
@@ -53,6 +65,11 @@
                 - name: Mark invalid integrity choice rejected
                   ansible.builtin.set_fact:
                     __invalid_input_integrity_choice_failed: true
+                  when: >-
+                    'value of fapolicyd_setup_integrity must be one of:' in
+                    __invalid_input_failure_messages and
+                    'got: invalid_integrity' in
+                    __invalid_input_failure_messages
 
             - name: Assert invalid integrity choice was rejected
               ansible.builtin.assert:
@@ -76,6 +93,11 @@
                 - name: Mark invalid permissive type rejected
                   ansible.builtin.set_fact:
                     __invalid_input_permissive_type_failed: true
+                  when: >-
+                    "argument 'fapolicyd_setup_permissive' is of type" in
+                    __invalid_input_failure_messages and
+                    'we were unable to convert to bool' in
+                    __invalid_input_failure_messages
 
             - name: Assert invalid permissive type was rejected
               ansible.builtin.assert:
@@ -103,6 +125,9 @@
             - name: Mark trusted_file integer rejected
               ansible.builtin.set_fact:
                 __invalid_input_trusted_file_int_failed: true
+              when: >-
+                'fapolicyd_add_trusted_file must be a string or list of strings, got int'
+                in __invalid_input_failure_messages
 
         - name: Assert trusted_file as integer was rejected
           ansible.builtin.assert:
@@ -126,6 +151,9 @@
             - name: Mark trusted_paths integer rejected
               ansible.builtin.set_fact:
                 __invalid_input_trusted_paths_int_failed: true
+              when: >-
+                'fapolicyd_add_trusted_paths must be a string or list of strings, got int'
+                in __invalid_input_failure_messages
 
         - name: Assert trusted_paths as integer was rejected
           ansible.builtin.assert:
@@ -151,6 +179,9 @@
             - name: Mark trusted_file non-string list rejected
               ansible.builtin.set_fact:
                 __invalid_input_trusted_file_list_failed: true
+              when: >-
+                'fapolicyd_add_trusted_file must be a string or list of strings, got list'
+                in __invalid_input_failure_messages
 
         - name: Assert trusted_file as list of non-strings was rejected
           ansible.builtin.assert:
@@ -175,6 +206,9 @@
             - name: Mark trusted_file dict rejected
               ansible.builtin.set_fact:
                 __invalid_input_trusted_file_dict_failed: true
+              when: >-
+                'fapolicyd_add_trusted_file must be a string or list of strings, got dict'
+                in __invalid_input_failure_messages
 
         - name: Assert trusted_file as dict was rejected
           ansible.builtin.assert:
@@ -198,6 +232,9 @@
             - name: Mark trusted_file boolean rejected
               ansible.builtin.set_fact:
                 __invalid_input_trusted_file_bool_failed: true
+              when: >-
+                'fapolicyd_add_trusted_file must be a string or list of strings, got bool'
+                in __invalid_input_failure_messages
 
         - name: Assert trusted_file as boolean was rejected
           ansible.builtin.assert:
