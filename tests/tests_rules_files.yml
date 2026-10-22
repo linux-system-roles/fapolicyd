@@ -1,0 +1,122 @@
+# SPDX-License-Identifier: MIT
+---
+- name: Test fapolicyd_rules_files
+  hosts: all
+  tasks:
+    - name: Run tests
+      vars:
+        __test_fpd_exe: "{{ __fapolicyd_tmpdir.path }}/exe1"
+        __test_fpd_user: fapolicyd_test1_user
+        __test_fpd_rule: /etc/fapolicyd/rules.d/05-test-deny.rules
+      block:
+        - name: Create temp test directory
+          tempfile:
+            path: /var/tmp
+            prefix: fapolicyd_
+            state: directory
+          register: __fapolicyd_tmpdir
+
+        - name: Make temp test directory readable by the test user
+          file:
+            path: "{{ __fapolicyd_tmpdir.path }}"
+            mode: "0755"
+
+        - name: Create test executable
+          copy:
+            content: |
+              #!{{ __python }}
+              import sys
+              sys.exit(0)
+            dest: "{{ __test_fpd_exe }}"
+            mode: "0755"
+          vars:
+            __python: "{{ ansible_python_interpreter |
+              d(ansible_facts['discovered_interpreter_python']) }}"
+
+        - name: Create a new user
+          user:
+            name: "{{ __test_fpd_user }}"
+            state: present
+            shell: /bin/bash
+
+        - name: Run the role with a rule that denies the executable
+          include_tasks: tasks/run_role_with_clear_facts.yml
+          vars:
+            fapolicyd_setup_integrity: sha256
+            fapolicyd_setup_trust: rpmdb,file
+            fapolicyd_add_trusted_paths:
+              - "{{ __test_fpd_exe }}"
+            fapolicyd_rules_files:
+              - name: 05-test-deny
+                content: |
+                  deny perm=execute all : path={{ __test_fpd_exe }}
+
+        - name: Get rules file status
+          stat:
+            path: "{{ __test_fpd_rule }}"
+          register: __rule_stat
+
+        - name: Check rules file owner, group and mode
+          assert:
+            that:
+              - __rule_stat.stat.exists
+              - __rule_stat.stat.pw_name == 'root'
+              - __rule_stat.stat.gr_name == 'fapolicyd'
+              - __rule_stat.stat.mode == '0644'
+
+        - name: Run trusted executable denied by the rule
+          command: >-
+            su - {{ __test_fpd_user | quote }} -c
+            {{ __test_fpd_exe | quote }}
+          register: run_exe
+          changed_when: false
+          failed_when: run_exe.rc != 126
+
+        - name: Run the role to remove the rule
+          include_tasks: tasks/run_role_with_clear_facts.yml
+          vars:
+            fapolicyd_setup_integrity: sha256
+            fapolicyd_setup_trust: rpmdb,file
+            fapolicyd_add_trusted_paths:
+              - "{{ __test_fpd_exe }}"
+            fapolicyd_rules_files:
+              - name: 05-test-deny
+                state: absent
+
+        - name: Check rules file was removed
+          stat:
+            path: "{{ __test_fpd_rule }}"
+          register: __rule_stat
+          failed_when: __rule_stat.stat.exists
+
+        - name: Run trusted executable after removing the rule
+          command: >-
+            su - {{ __test_fpd_user | quote }} -c
+            {{ __test_fpd_exe | quote }}
+          changed_when: false
+
+      always:
+        - name: Remove test rules file
+          file:
+            path: "{{ __test_fpd_rule }}"
+            state: absent
+          tags: tests::cleanup
+
+        - name: Shutdown fapolicyd
+          service:
+            name: fapolicyd
+            state: stopped
+            enabled: false
+          tags: tests::cleanup
+
+        - name: Clean up temp directory
+          file:
+            path: "{{ __fapolicyd_tmpdir.path }}"
+            state: absent
+          tags: tests::cleanup
+
+        - name: Remove test user
+          user:
+            name: "{{ __test_fpd_user }}"
+            state: absent
+          tags: tests::cleanup
