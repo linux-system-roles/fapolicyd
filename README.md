@@ -51,6 +51,26 @@ Deprecated alias for `fapolicyd_add_trusted_paths`.  If `fapolicyd_add_trusted_p
 is not set, the role uses `fapolicyd_add_trusted_file` instead.  Prefer
 `fapolicyd_add_trusted_paths` in new playbooks.
 
+### fapolicyd_rules_files
+
+Default empty - list of rules files to manage in `/etc/fapolicyd/rules.d`.
+Each item has `name` (the role adds `.rules`), `content`, and `state`
+(`present` or `absent`, default `present`).  Files not listed are left alone.
+On fapolicyd 1.5 or later, the role checks all rules with
+`fapolicyd-cli --check-rules` before writing any file, and fails without
+changing anything if the check fails.  Older versions do not check rule
+syntax.
+Requires EL 8.6 or later.
+
+```yaml
+fapolicyd_rules_files:
+  - name: 99-deny-all
+    content: |
+      deny perm=any all : all
+  - name: 80-old-rule
+    state: absent
+```
+
 ## Example Playbook
 
 ```yaml
