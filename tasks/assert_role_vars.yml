@@ -43,3 +43,15 @@
     fail_msg: >-
       fapolicyd_setup_watch_fs must be a list of strings,
       got {{ fapolicyd_setup_watch_fs | type_debug }}
+
+- name: Assert fapolicyd_rules_files items have content when present
+  ansible.builtin.assert:
+    that:
+      - item.content is defined
+    fail_msg: >-
+      fapolicyd_rules_files item {{ item.name }} must have content defined
+      when state is present
+  loop: "{{ fapolicyd_rules_files }}"
+  loop_control:
+    label: "{{ item.name }}"
+  when: item.state | d('present') == 'present'

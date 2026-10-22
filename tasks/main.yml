@@ -46,11 +46,22 @@
     - not __fapolicyd_trustfiles_supported
   register: __failed_check_trusted_file
 
+- name: Check rules files compatibility
+  fail:
+    msg: >-
+      Fapolicyd does not support rules files setting fapolicyd_rules_files
+      on EL version < 8.6
+  ignore_errors: true
+  when:
+    - fapolicyd_rules_files | length > 0
+    - not __fapolicyd_rulesd_supported
+  register: __failed_check_rules_files
+
 - name: Check failed conditions
   fail:
     msg: Multiple failed conditions
   when: __failed_check_trust is failed or __failed_check_integrity is failed or
-    __failed_check_trusted_file is failed
+    __failed_check_trusted_file is failed or __failed_check_rules_files is failed
 
 - name: Install fapolicyd packages
   package:
@@ -78,6 +89,120 @@
   when:
     - __fapolicyd_configcheck_supported | bool
     - __fapolicy_conf is changed
+
+- name: Manage fapolicyd rules files
+  when: fapolicyd_rules_files | length > 0
+  block:
+    - name: Check for old fapolicyd.rules file
+      stat:
+        path: "{{ __fapolicyd_dir }}/fapolicyd.rules"
+      register: __fapolicyd_old_rules
+
+    - name: Fail if old fapolicyd.rules file exists
+      fail:
+        msg: >-
+          {{ __fapolicyd_dir }}/fapolicyd.rules exists, so fapolicyd cannot use
+          {{ __fapolicyd_rules_dir }}. Move its rules into rules.d first.
+      when: __fapolicyd_old_rules.stat.exists
+
+    - name: Get installed fapolicyd version
+      package_facts:
+      no_log: "{{ ansible_verbosity < 3 }}"
+
+    # Assisted by Claude Code using model(s) Claude Opus 5.5
+    # Check the rules in a temp copy of rules.d before writing them.
+    # Files are checked merged, because a rule can use a set defined in
+    # another file.  fapolicyd-cli --check-rules exists since 1.5.
+    - name: Check fapolicyd rules before writing them
+      when: __fapolicyd_checkrules_supported | bool
+      vars:
+        __fapolicyd_checkrules_supported: "{{
+          'fapolicyd' in ansible_facts.packages and
+          ansible_facts.packages['fapolicyd'][0].version is
+          version('1.5', '>=') }}"
+      block:
+        - name: Create temp rules directory
+          tempfile:
+            state: directory
+            suffix: _fapolicyd_rules
+          check_mode: false
+          changed_when: false
+          register: __fapolicyd_rules_tmp
+
+        - name: Copy current rules files to temp directory
+          copy:
+            src: "{{ __fapolicyd_rules_dir }}/"
+            dest: "{{ __fapolicyd_rules_tmp.path }}/"
+            remote_src: true
+            mode: preserve
+          check_mode: false
+          changed_when: false
+
+        - name: Create rules files in temp directory
+          copy:
+            content: "{{ item.content }}"
+            dest: "{{ __fapolicyd_rules_tmp.path }}/{{ item.name }}.rules"
+            mode: "0600"
+          loop: "{{ fapolicyd_rules_files }}"
+          loop_control:
+            label: "{{ item.name }}"
+          when: item.state | d('present') == 'present'
+          check_mode: false
+          changed_when: false
+
+        - name: Remove rules files in temp directory
+          file:
+            path: "{{ __fapolicyd_rules_tmp.path }}/{{ item.name }}.rules"
+            state: absent
+          loop: "{{ fapolicyd_rules_files }}"
+          loop_control:
+            label: "{{ item.name }}"
+          when: item.state | d('present') == 'absent'
+          check_mode: false
+          changed_when: false
+
+        # merge the files the same way fagenrules does
+        - name: Run fapolicyd rules check
+          shell:
+            cmd: |
+              set -euo pipefail
+              dir={{ __fapolicyd_rules_tmp.path | quote }}
+              for f in $(ls -1v "$dir" | grep '\.rules$'); do
+                cat "$dir/$f"
+                echo
+              done > "$dir/merged.check"
+              fapolicyd-cli --check-rules "$dir/merged.check"
+          check_mode: false
+          changed_when: false
+      always:
+        - name: Remove temp rules directory
+          file:
+            path: "{{ __fapolicyd_rules_tmp.path }}"
+            state: absent
+          check_mode: false
+          changed_when: false
+          when: __fapolicyd_rules_tmp.path is defined
+
+    - name: Create fapolicyd rules files
+      copy:
+        content: "{{ item.content }}"
+        dest: "{{ __fapolicyd_rules_dir }}/{{ item.name }}.rules"
+        owner: root
+        group: fapolicyd
+        mode: "0644"
+      loop: "{{ fapolicyd_rules_files }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: item.state | d('present') == 'present'
+
+    - name: Remove fapolicyd rules files
+      file:
+        path: "{{ __fapolicyd_rules_dir }}/{{ item.name }}.rules"
+        state: absent
+      loop: "{{ fapolicyd_rules_files }}"
+      loop_control:
+        label: "{{ item.name }}"
+      when: item.state | d('present') == 'absent'
 
 - name: Start fapolicyd service
   service:

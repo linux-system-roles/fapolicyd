@@ -79,3 +79,31 @@ argument_specs:
           from it. These values should match the name presented in the first
           column of `/proc/mounts`. A `null` value sets ext2, ext3, ext4,
           tmpfs, xfs, vfat, iso9660, btrfs.
+      fapolicyd_rules_files:
+        type: list
+        elements: dict
+        default: []
+        description: >
+          Rules files to manage in /etc/fapolicyd/rules.d. The role
+          adds the `.rules` suffix to `name`. Files not listed are
+          left alone.
+        options:
+          name:
+            type: str
+            required: true
+            description: >
+              The name of the rules file (without the `.rules`
+              suffix).
+          content:
+            type: str
+            description: >
+              The content of the rules file. Required when `state`
+              is `present`.
+          state:
+            type: str
+            default: present
+            choices:
+              - present
+              - absent
+            description: >
+              Whether the rules file should be present or absent.

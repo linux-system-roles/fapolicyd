@@ -33,3 +33,7 @@ fapolicyd_add_trusted_paths: "{{ fapolicyd_add_trusted_file }}"
 # list of filesystems to work with fapolicyd
 # They should exactly match the name presented in the first column of /proc/mounts.
 fapolicyd_setup_watch_fs: [ext2, ext3, ext4, tmpfs, xfs, vfat, iso9660, btrfs]
+
+# fapolicyd rules files in /etc/fapolicyd/rules.d
+# list of dicts with name, content, and optional state (present/absent)
+fapolicyd_rules_files: []

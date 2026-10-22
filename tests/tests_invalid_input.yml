@@ -360,6 +360,74 @@
               assert_role_vars should reject fapolicyd_add_trusted_file
               when given a boolean value
 
+        # --- Test: fapolicyd_rules_files with an invalid rule ---
+        # Assisted by Claude Code using model(s) Claude Opus 5.5
+        - name: Get installed fapolicyd version
+          ansible.builtin.package_facts:
+          no_log: "{{ ansible_verbosity < 3 }}"
+
+        # the role checks rules only on fapolicyd 1.5 or later
+        - name: Run invalid rule tests
+          when: ansible_facts.packages['fapolicyd'][0].version is
+            version('1.5', '>=')
+          block:
+            # 75-test-lang uses a set defined in 10-languages.rules
+            - name: Run role with valid rules
+              ansible.builtin.include_role:
+                name: linux-system-roles.fapolicyd
+              vars:
+                fapolicyd_rules_files:
+                  - name: 05-test-invalid
+                    content: |
+                      deny perm=execute all : path=/nonexistent/fapolicyd-test
+                  - name: 75-test-lang
+                    content: |
+                      allow perm=open all : ftype=%languages trust=1
+
+            - name: Role rejects an invalid rule without writing files
+              block:
+                - name: Run role with an invalid rule
+                  ansible.builtin.include_role:
+                    name: linux-system-roles.fapolicyd
+                  vars:
+                    fapolicyd_rules_files:
+                      - name: 05-test-invalid
+                        content: |
+                          this is not a rule
+                      - name: 06-test-new
+                        content: |
+                          deny perm=execute all : path=/nonexistent/fapolicyd-test
+              rescue:
+                - name: Get existing rules file content
+                  ansible.builtin.slurp:
+                    src: /etc/fapolicyd/rules.d/05-test-invalid.rules
+                  register: __invalid_input_rules_file_content
+
+                - name: Get new rules file status
+                  ansible.builtin.stat:
+                    path: /etc/fapolicyd/rules.d/06-test-new.rules
+                  register: __invalid_input_rules_file_new
+
+                - name: Mark invalid rule rejected
+                  ansible.builtin.set_fact:
+                    __invalid_input_rules_file_failed: true
+                  when: >-
+                    ansible_failed_result.cmd | default('') | string
+                    is search('check-rules') and
+                    __invalid_input_rules_file_content.content | b64decode
+                    is search('/nonexistent/fapolicyd-test') and
+                    not __invalid_input_rules_file_new.stat.exists
+
+            - name: Assert invalid rule was rejected and no files written
+              ansible.builtin.assert:
+                that:
+                  - >-
+                    __invalid_input_rules_file_failed
+                    | default(false)
+                fail_msg: >-
+                  the role should reject an invalid rule in
+                  fapolicyd_rules_files without writing the rules files
+
       always:
         - name: Clear test facts
           ansible.builtin.set_fact:
@@ -375,4 +443,15 @@
             __invalid_input_watch_fs_list_failed:
             __invalid_input_watch_fs_dict_failed:
             __invalid_input_watch_fs_bool_failed:
+            __invalid_input_rules_file_failed:
+          tags: tests::cleanup
+
+        - name: Remove test rules files
+          ansible.builtin.file:
+            path: /etc/fapolicyd/rules.d/{{ item }}.rules
+            state: absent
+          loop:
+            - 05-test-invalid
+            - 06-test-new
+            - 75-test-lang
           tags: tests::cleanup
