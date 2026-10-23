@@ -151,6 +151,8 @@ id="toc-fapolicyd_setup_trust">fapolicyd_setup_trust</a></li>
 id="toc-fapolicyd_setup_integrity">fapolicyd_setup_integrity</a></li>
 <li><a href="#fapolicyd_setup_permissive"
 id="toc-fapolicyd_setup_permissive">fapolicyd_setup_permissive</a></li>
+<li><a href="#fapolicyd_setup_watch_fs"
+id="toc-fapolicyd_setup_watch_fs">fapolicyd_setup_watch_fs</a></li>
 <li><a href="#fapolicyd_add_trusted_paths"
 id="toc-fapolicyd_add_trusted_paths">fapolicyd_add_trusted_paths</a></li>
 <li><a href="#fapolicyd_add_trusted_file"
@@ -196,6 +198,10 @@ not cover it.</p>
 <h2 id="fapolicyd_setup_permissive">fapolicyd_setup_permissive</h2>
 <p>Default <code>false</code> - if set to <code>true</code> deploys the
 daemon in permissive mode.</p>
+<h2 id="fapolicyd_setup_watch_fs">fapolicyd_setup_watch_fs</h2>
+<p>Default [ext2,ext3,ext4,tmpfs,xfs,vfat,iso9660,btrfs] - list of fs
+types watched. Any change here becomes the entire list of items, and the
+data in each should match the first column of /proc/mounts.</p>
 <h2 id="fapolicyd_add_trusted_paths">fapolicyd_add_trusted_paths</h2>
 <p>Default empty - list of files and directories that will be marked as
 trusted. Note that you cannot specify an empty directory.</p>
